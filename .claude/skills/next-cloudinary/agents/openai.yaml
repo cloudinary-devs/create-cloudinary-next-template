@@ -1,0 +1,3 @@
+interface:
+  display_name: "Next Cloudinary"
+  short_description: "Guidance for Next.js apps using Cloudinary and next-cloudinary."
