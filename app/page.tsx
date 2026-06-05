@@ -1,17 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { AdvancedImage, placeholder, lazyload } from '@cloudinary/react';
-import { fill } from '@cloudinary/url-gen/actions/resize';
-import { format, quality } from '@cloudinary/url-gen/actions/delivery';
-import { auto } from '@cloudinary/url-gen/qualifiers/format';
-import { auto as autoQuality } from '@cloudinary/url-gen/qualifiers/quality';
-import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
-import { cld, uploadPreset } from './cloudinary/config';
-import { UploadWidget } from './cloudinary/UploadWidget';
-import type { CloudinaryUploadResult } from './cloudinary/UploadWidget';
+import { CldImage, CldUploadWidget } from 'next-cloudinary';
+import type { CloudinaryUploadWidgetInfo } from 'next-cloudinary';
 import './App.css';
 
+const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const hasUploadPreset = Boolean(uploadPreset);
 
 const PROMPTS_WITH_UPLOAD = [
@@ -30,23 +24,17 @@ export default function Home() {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [clickedIds, setClickedIds] = useState(new Set<number>());
 
-  const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    console.log('Upload successful:', result);
-    // result contains everything you need to work with the uploaded asset:
-    //   result.public_id   — Cloudinary asset ID (use with cld.image() for transformations)
-    //   result.secure_url  — direct HTTPS URL to the original file
-    //   result.url         — HTTP URL (prefer secure_url)
-    //   result.width / result.height — image dimensions
-    //   result.format      — file format (e.g. 'jpg', 'png', 'webp')
-    //   result.bytes       — file size in bytes
-    //   result.resource_type — 'image', 'video', or 'raw'
-    setUploadedImageId(result.public_id);
-    setUploadedUrl(result.secure_url); // store the URL to use anywhere in your app
-  };
-
-  const handleUploadError = (error: Error) => {
-    console.error('Upload error:', error);
-    alert(`Upload failed: ${error.message}`);
+  const handleUploadSuccess = (info: CloudinaryUploadWidgetInfo) => {
+    console.log('Upload successful:', info);
+    // info contains everything you need to work with the uploaded asset:
+    //   info.public_id   — Cloudinary asset ID (use as src for CldImage)
+    //   info.secure_url  — direct HTTPS URL to the original file
+    //   info.width / info.height — image dimensions
+    //   info.format      — file format (e.g. 'jpg', 'png', 'webp')
+    //   info.bytes       — file size in bytes
+    //   info.resource_type — 'image', 'video', or 'raw'
+    setUploadedImageId(info.public_id);
+    setUploadedUrl(info.secure_url);
   };
 
   const copyPrompt = (text: string, id: number) => {
@@ -60,14 +48,7 @@ export default function Home() {
     });
   };
 
-  // Display uploaded image if available, otherwise show a sample
-  const imageId = uploadedImageId || 'samples/people/bicycle';
-
-  const displayImage = cld
-    .image(imageId)
-    .resize(fill().width(600).height(400).gravity(autoGravity()))
-    .delivery(format(auto()))
-    .delivery(quality(autoQuality()));
+  const imageId = uploadedImageId ?? 'samples/people/bicycle';
 
   return (
     <div className="app">
@@ -78,19 +59,48 @@ export default function Home() {
         {hasUploadPreset && (
           <div className="upload-section">
             <h2>Upload an Image</h2>
-            <UploadWidget
-              onUploadSuccess={handleUploadSuccess}
-              onUploadError={handleUploadError}
-              buttonText="Upload Image"
-            />
+            <CldUploadWidget
+              uploadPreset={uploadPreset!}
+              options={{ sources: ['local', 'camera', 'url'], multiple: false }}
+              onSuccess={(result) => {
+                if (typeof result.info === 'object' && result.info) {
+                  handleUploadSuccess(result.info);
+                }
+              }}
+              onError={(error) => {
+                console.error('Upload error:', error);
+              }}
+            >
+              {({ open }) => (
+                <button
+                  type="button"
+                  onClick={() => open()}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    color: 'white',
+                    backgroundColor: '#6366f1',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Upload Image
+                </button>
+              )}
+            </CldUploadWidget>
           </div>
         )}
 
         <div className="image-section">
           <h2>Display Image</h2>
-          <AdvancedImage
-            cldImg={displayImage}
-            plugins={[placeholder({ mode: 'blur' }), lazyload()]}
+          <CldImage
+            src={imageId}
+            width={600}
+            height={400}
+            crop="fill"
+            gravity="auto"
             alt={uploadedImageId ? 'Your uploaded image' : 'Sample image'}
             className="display-image"
           />
