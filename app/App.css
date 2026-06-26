@@ -23,6 +23,11 @@ h2 {
   margin: 0 0 1rem 0;
 }
 
+a {
+  color: #2bacff;
+  color: oklch(0.7202 0.1677 245);
+}
+
 .upload-section,
 .image-section {
   width: 100%;
