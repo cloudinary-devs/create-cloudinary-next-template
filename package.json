@@ -10,13 +10,13 @@
   },
   "dependencies": {
     "next": "16.2.7",
-    "next-cloudinary": "^6.18.8",
+    "next-cloudinary": "^7.0.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
